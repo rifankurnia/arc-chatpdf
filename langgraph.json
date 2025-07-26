@@ -1,0 +1,8 @@
+{
+    "dependencies": ["./src/luthor"],
+    "graphs": {
+      "agent": "./main.py:graph"
+    },
+    "env": ".env"
+  }
+  

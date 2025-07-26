@@ -1,0 +1,18 @@
+[project]
+name = "arc-chatpdf"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "langchain>=0.3.27",
+    "langchain-anthropic>=0.3.17",
+    "langchain-chroma>=0.2.5",
+    "langchain-google-genai>=2.1.8",
+    "langchain-google-vertexai>=2.0.27",
+    "langchain-openai>=0.3.28",
+    "langchain-tavily>=0.2.10",
+    "langgraph>=0.5.4",
+    "langgraph-checkpoint>=2.1.1",
+    "langgraph-cli[inmem]>=0.3.6",
+]
