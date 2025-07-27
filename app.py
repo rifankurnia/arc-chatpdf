@@ -4,10 +4,21 @@ from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 import uuid
+import os
 from main import graph, run_query
 from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
 import asyncio
 import logging
+
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
+
+# Configure LangSmith tracing
+os.environ["LANGSMITH_TRACING"] = os.getenv("LANGSMITH_TRACING", "false")
+os.environ["LANGSMITH_ENDPOINT"] = os.getenv("LANGSMITH_ENDPOINT", "https://api.smith.langchain.com")
+os.environ["LANGSMITH_API_KEY"] = os.getenv("LANGSMITH_API_KEY", "")
+os.environ["LANGSMITH_PROJECT"] = os.getenv("LANGSMITH_PROJECT", "pr-another-slider-61")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -86,7 +97,9 @@ async def root():
             "POST /query": "Submit a question",
             "DELETE /session/{session_id}": "Clear a session",
             "GET /session/{session_id}": "Get session info",
-            "GET /health": "Health check"
+            "GET /health": "Health check",
+            "POST /evaluate": "Run evaluation with golden Q&A pairs",
+            "POST /debug/routing": "Debug query routing"
         }
     }
 
@@ -178,6 +191,43 @@ async def debug_routing(request: QueryRequest):
         "query": request.query,
         "routing_result": result
     }
+
+# Evaluation endpoint
+@app.post("/evaluate")
+async def run_evaluation():
+    """Run evaluation with golden Q&A pairs"""
+    try:
+        from evaluation import EvaluationSystem
+        
+        # Create evaluation system
+        evaluator = EvaluationSystem()
+        
+        # Load golden Q&A pairs from file
+        evaluator.load_golden_qa_from_file("golden_qa_pairs.json")
+        
+        if not evaluator.golden_qa_pairs:
+            raise HTTPException(status_code=404, detail="No golden Q&A pairs found")
+        
+        # Run evaluation
+        results = await evaluator.run_evaluation(run_query)
+        
+        # Generate report
+        report = evaluator.generate_report()
+        
+        # Save results
+        evaluator.save_results("evaluation_results.json")
+        
+        return {
+            "message": "Evaluation completed successfully",
+            "summary": report["summary"],
+            "category_performance": report["category_performance"],
+            "difficulty_performance": report["difficulty_performance"],
+            "results_file": "evaluation_results.json"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error running evaluation: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error running evaluation: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

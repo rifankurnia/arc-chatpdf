@@ -1,0 +1,66 @@
+[
+  {
+    "question": "Which prompt template gave the highest zero-shot accuracy on Spider in Zhang et al. (2024)?",
+    "expected_answer": "SimpleDDL-MD-Chat achieved the highest zero-shot accuracy of 71.6% on Spider",
+    "category": "performance_metrics",
+    "difficulty": "medium",
+    "keywords": ["SimpleDDL-MD-Chat", "71.6%", "Spider", "zero-shot"],
+    "description": "Tests ability to find specific performance metrics from research papers"
+  },
+  {
+    "question": "What other prompt templates were tested in Zhang et al. (2024)?",
+    "expected_answer": "The paper tested DDL-HTML-Chat, DDL-HTML-Complete, DDL-MD-Chat, DDL-MD-Complete, DDL-Coding-Chat, DDL-Coding-Complete, SimpleDDL-MD-Chat, and SimpleDDL-MD-Complete",
+    "category": "methodology",
+    "difficulty": "easy",
+    "keywords": ["DDL-HTML-Chat", "DDL-MD-Chat", "DDL-Coding-Chat", "SimpleDDL-MD-Complete"],
+    "description": "Tests ability to list methodology details from research papers"
+  },
+  {
+    "question": "What is the latest news about OpenAI?",
+    "expected_answer": "OpenAI has made several recent announcements including new models and partnerships",
+    "category": "current_events",
+    "difficulty": "easy",
+    "keywords": ["OpenAI", "recent", "announcements", "models"],
+    "description": "Tests web search capability for current events"
+  },
+  {
+    "question": "How does the performance of DDL-MD-Chat compare to SimpleDDL-MD-Chat?",
+    "expected_answer": "SimpleDDL-MD-Chat performed better than DDL-MD-Chat with higher accuracy scores",
+    "category": "comparison",
+    "difficulty": "hard",
+    "keywords": ["SimpleDDL-MD-Chat", "DDL-MD-Chat", "better", "higher", "accuracy"],
+    "description": "Tests ability to compare different methods from research papers"
+  },
+  {
+    "question": "What execution accuracy does davinci-codex reach on Spider with the 'Create Table + Select 3' prompt?",
+    "expected_answer": "Davinci-codex attains 67% execution accuracy on the Spider dev set with that prompt style",
+    "category": "performance_metrics",
+    "difficulty": "medium",
+    "keywords": ["davinci-codex", "67%", "execution accuracy", "Spider", "Create Table + Select 3"],
+    "description": "Tests ability to find specific model performance data"
+  },
+  {
+    "question": "What are the main contributions of the Zhang et al. (2024) paper?",
+    "expected_answer": "The paper contributes a comprehensive benchmark for text-to-SQL capability evaluation",
+    "category": "paper_overview",
+    "difficulty": "easy",
+    "keywords": ["benchmark", "text-to-SQL", "evaluation", "contributions"],
+    "description": "Tests ability to understand paper contributions"
+  },
+  {
+    "question": "What is the best?",
+    "expected_answer": "This question is ambiguous and needs clarification about what context is being referred to",
+    "category": "clarification",
+    "difficulty": "easy",
+    "keywords": ["ambiguous", "clarification", "context"],
+    "description": "Tests ability to handle ambiguous queries"
+  },
+  {
+    "question": "What datasets were used in the evaluation?",
+    "expected_answer": "The Spider benchmark dataset was used for evaluation in the study",
+    "category": "methodology",
+    "difficulty": "easy",
+    "keywords": ["Spider", "benchmark", "dataset", "evaluation"],
+    "description": "Tests ability to identify datasets used in research"
+  }
+] 

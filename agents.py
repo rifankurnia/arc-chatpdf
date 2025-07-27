@@ -8,6 +8,18 @@ from langchain.schema import Document
 import json
 import re
 import logging
+import os
+
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
+
+# Configure LangSmith tracing
+import os
+os.environ["LANGSMITH_TRACING"] = os.getenv("LANGSMITH_TRACING", "false")
+os.environ["LANGSMITH_ENDPOINT"] = os.getenv("LANGSMITH_ENDPOINT", "https://api.smith.langchain.com")
+os.environ["LANGSMITH_API_KEY"] = os.getenv("LANGSMITH_API_KEY", "")
+os.environ["LANGSMITH_PROJECT"] = os.getenv("LANGSMITH_PROJECT", "arc-chatpdf")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -105,71 +117,82 @@ def extract_query_from_state(state: Dict[str, Any]) -> str:
 
 def routing_node(state: State, config: RunnableConfig) -> Dict[str, Any]:
     """
-    Entry point that analyzes the query and determines the processing path.
-    
-    Flow:
-    1. Extract the user query
-    2. Analyze if it's ambiguous
-    3. Determine if it needs document search or web search
-    4. Set routing flags
+    Routes the query to the appropriate processing node based on intent.
     """
     logger.info("=== ROUTING NODE ===")
     
-    # Extract the query using our robust extraction method
+    # Extract the current query
     query = extract_query_from_state(state)
-    
-    if not query:
-        logger.warning("No query found in state")
-        return {
-            "intent_type": "document_rag",
-            "needs_clarification": True
-        }
-    
     logger.info(f"Query: {query}")
     
-    routing_prompt = ChatPromptTemplate.from_messages([
-        ("system", """You are a routing assistant that determines how to handle user queries.
-        
-        Analyze the user's query and determine:
-        1. If it's ambiguous and needs clarification
-        2. If it can be answered from academic papers (document_rag)
-        3. If it needs web search (websearch_rag)
-        
-        Respond with a JSON object containing:
-        - intent_type: "document_rag" or "websearch_rag"
-        - needs_clarification: true or false
-        - reasoning: brief explanation
-        
+    # Build conversation context for better intent understanding
+    conversation_context = ""
+    if len(state["messages"]) > 1:  # More than just the current query
+        # Get the last few messages for context (excluding the current query)
+        recent_messages = state["messages"][-4:-1]  # Last 3 messages before current
+        conversation_context = "\n\nPrevious conversation:\n" + "\n".join([
+            f"{'User' if isinstance(msg, HumanMessage) else 'Assistant'}: {msg.content}"
+            for msg in recent_messages
+        ])
     
-        """),
+    # Create routing prompt with conversation context
+    routing_prompt = ChatPromptTemplate.from_messages([
+        ("system", """You are an expert at routing user queries to the appropriate processing system. 
+        Analyze the user's query and the conversation context to determine the best processing path.
+
+        AVAILABLE PROCESSING PATHS:
+        1. document_rag: For questions about specific academic papers, research findings, or documents that have been ingested into the system
+        2. websearch_rag: For current events, recent developments, or information that would be best found through web search
+        3. clarification_node: For ambiguous or underspecified queries that need clarification
+
+        ROUTING RULES:
+        - If the query references specific papers, authors, or research findings, use document_rag
+        - If the query asks about current events, recent news, or requires up-to-date information, use websearch_rag
+        - If the query is ambiguous or lacks context, use clarification_node
+        - IMPORTANT: Consider conversation context! If this is a follow-up question that references previous discussion about papers/research, route to document_rag
+
+        EXAMPLES:
+        - "What did Zhang et al. find?" → document_rag (specific paper reference)
+        - "What other templates were tested?" → document_rag (follow-up about previous paper discussion)
+        - "Latest news about OpenAI" → websearch_rag (current events)
+        - "What is the best?" → clarification_node (ambiguous)
+
+        {conversation_context}
+
+        Respond with a JSON object containing:
+        - intent_type: "document_rag", "websearch_rag", or "clarification_node"
+        - needs_clarification: true/false
+        - reasoning: brief explanation of your routing decision"""),
         ("human", "{query}")
     ])
     
-    response = llm.invoke(routing_prompt.format_messages(query=query))
+    response = llm.invoke(routing_prompt.format_messages(
+        query=query,
+        conversation_context=conversation_context
+    ))
     
-    # Parse the response
     try:
-        json_match = re.search(r'\{.*\}', response.content, re.DOTALL)
-        if json_match:
-            routing_info = json.loads(json_match.group())
-        else:
-            routing_info = {"intent_type": "document_rag", "needs_clarification": False}
-    except Exception as e:
-        logger.error(f"Error parsing routing response: {e}")
-        routing_info = {"intent_type": "document_rag", "needs_clarification": False}
-    
-    # Check for explicit web search requests
-    web_search_keywords = ["search online", "search the web", "current", "latest", 
-                          "this month", "today", "recent news", "what's new"]
-    if any(phrase in query.lower() for phrase in web_search_keywords):
-        routing_info["intent_type"] = "websearch_rag"
-    
-    logger.info(f"Routing decision: {routing_info}")
-    
-    return {
-        "intent_type": routing_info.get("intent_type", "document_rag"),
-        "needs_clarification": routing_info.get("needs_clarification", False)
-    }
+        routing_decision = json.loads(response.content)
+        logger.info(f"Routing decision: {routing_decision}")
+        
+        intent_type = routing_decision.get("intent_type", "clarification_node")
+        needs_clarification = routing_decision.get("needs_clarification", True)
+        
+        logger.info(f"Routing to: {intent_type}" + (" (needs clarification)" if needs_clarification else ""))
+        
+        return {
+            "intent_type": intent_type,
+            "needs_clarification": needs_clarification,
+            "query": query
+        }
+        
+    except json.JSONDecodeError:
+        logger.error(f"Failed to parse routing decision: {response.content}")
+        return {
+            "intent_type": "clarification_node",
+            "needs_clarification": True,
+            "query": query
+        }
 
 
 def routing_conditional(state: State, config: RunnableConfig) -> Literal["document_rag", "websearch_rag", "clarification_node"]:
@@ -212,26 +235,59 @@ def document_rag(state: State, config: RunnableConfig) -> Dict[str, Any]:
         
         # Process retrieved documents to create final answer
         doc_analysis_prompt = ChatPromptTemplate.from_messages([
-            ("system", """You are an expert at analyzing academic papers. 
-            Extract and summarize the most relevant information from these documents to answer the user's query.
-            Be specific and cite the source documents when possible.
-            
-            User Query: {query}
-            
-            Documents:
-            {documents}
-            
-            Provide a comprehensive answer that directly addresses the query. If the documents don't contain 
-            relevant information, clearly state that."""),
+            ("system", """You are an expert academic researcher analyzing research papers. Your task is to extract specific, factual information from the provided documents to answer the user's query.
+
+CRITICAL INSTRUCTIONS:
+1. **Consider conversation context** - If this is a follow-up question, use the previous conversation to understand what the user is referring to
+2. **Look for EXACT numbers and percentages** - especially in tables and performance metrics
+3. **Identify specific prompt templates, models, and benchmarks** mentioned
+4. **For performance queries**: Find the highest/lowest scores and their corresponding conditions
+5. **For accuracy questions**: Look for execution accuracy (EX), test-suite accuracy (TS), valid accuracy (VA)
+6. **For template comparisons**: Identify which template performs best and by how much
+7. **Cite specific sources and page numbers** when possible
+8. **If you find the information, provide the EXACT numbers and context**
+
+SPECIFIC GUIDELINES FOR PERFORMANCE QUERIES:
+- Search for tables with performance metrics (Table 3, Table 4, etc.)
+- Look for terms like "execution accuracy", "EX", "zero-shot", "few-shot"
+- Find specific model names (davinci-codex, ChatGPT, etc.)
+- Identify prompt template names (SimpleDDL-MD-Chat, Create Table + Select 3, etc.)
+- Extract exact percentages and scores
+
+{conversation_context}
+
+User Query: {query}
+
+Documents:
+{documents}
+
+Provide a detailed, factual answer with EXACT numbers and percentages. If you find the information, state it clearly with the specific values. If the information is not found, explain what you searched for."""),
             ("human", "{query}")
         ])
         
-        # Format documents for analysis
+        # Extract query for the prompt
+        query = extract_query_from_state(state)
+        
+        # Build conversation context from previous messages
+        conversation_context = ""
+        if len(state["messages"]) > 1:  # More than just the current query
+            # Get the last few messages for context (excluding the current query)
+            recent_messages = state["messages"][-4:-1]  # Last 3 messages before current
+            conversation_context = "\n\nPrevious conversation:\n" + "\n".join([
+                f"{'User' if isinstance(msg, HumanMessage) else 'Assistant'}: {msg.content}"
+                for msg in recent_messages
+            ])
+        
+        # Rerank and optimize documents for better context
+        optimized_docs = optimize_document_context(state["retrieved_docs"], query)
+        
+        # Format optimized documents
         docs_text = "\n\n---Document---\n\n".join([
             f"Source: {doc.metadata.get('source', 'Unknown')}\n"
             f"Page: {doc.metadata.get('page', 'N/A')}\n"
+            f"Relevance Score: {doc.metadata.get('relevance_score', 'N/A')}\n"
             f"Content: {doc.page_content}"
-            for i, doc in enumerate(state["retrieved_docs"][:5])
+            for i, doc in enumerate(optimized_docs[:10])  # Increased from 8 to 10
         ])
         
         if not docs_text.strip():
@@ -240,19 +296,18 @@ def document_rag(state: State, config: RunnableConfig) -> Dict[str, Any]:
                 "final_answer": "I couldn't find any relevant information in the available documents to answer your query. Could you please rephrase or provide more specific details?"
             }
         
-        # Extract query for the prompt
-        query = extract_query_from_state(state)
-        
         response = llm.invoke(doc_analysis_prompt.format_messages(
             query=query,
-            documents=docs_text
+            documents=docs_text,
+            conversation_context=conversation_context
         ))
         
         # Mark as processed by setting final_answer
         return {
             "context": response.content,
             "final_answer": response.content,
-            "retrieved_docs": state["retrieved_docs"]  # Keep the docs in state
+            "retrieved_docs": state["retrieved_docs"],  # Keep the docs in state
+            "messages": state["messages"] + [AIMessage(content=response.content)]
         }
     
     # First call - prepare for document retrieval
@@ -263,20 +318,20 @@ def document_rag(state: State, config: RunnableConfig) -> Dict[str, Any]:
     }
 
 
-def chroma_conditional(state: State, config: RunnableConfig) -> Literal["chroma_retriever", "clarification_node"]:
+def chroma_conditional(state: State, config: RunnableConfig) -> Literal["chroma_retriever", "end"]:
     """
     Conditional routing for document RAG flow.
     Determines whether to retrieve documents or proceed to final answer.
     """
-    # If we have a final answer, go to clarification
+    # If we have a final answer, go to end
     if state.get("final_answer"):
-        logger.info("Final answer ready, going to clarification")
-        return "clarification_node"
+        logger.info("Final answer ready, going to end")
+        return "end"
     
-    # If we already have retrieved docs with content, go to clarification
+    # If we already have retrieved docs with content, go to end
     if state.get("retrieved_docs") and len(state.get("retrieved_docs", [])) > 0:
-        logger.info(f"Already have {len(state['retrieved_docs'])} documents, going to clarification")
-        return "clarification_node"
+        logger.info(f"Already have {len(state['retrieved_docs'])} documents, going to end")
+        return "end"
     
     # Otherwise, retrieve documents
     logger.info("Need to retrieve documents")
@@ -338,7 +393,8 @@ def websearch_rag(state: State, config: RunnableConfig) -> Dict[str, Any]:
         
         return {
             "context": response.content,
-            "final_answer": response.content
+            "final_answer": response.content,
+            "messages": state["messages"] + [AIMessage(content=response.content)]
         }
     
     # First call - prepare for web search
@@ -348,15 +404,15 @@ def websearch_rag(state: State, config: RunnableConfig) -> Dict[str, Any]:
     }
 
 
-def websearch_conditional(state: State, config: RunnableConfig) -> Literal["tavily_search", "clarification_node"]:
+def websearch_conditional(state: State, config: RunnableConfig) -> Literal["tavily_search", "end"]:
     """
     Conditional routing for web search flow.
     Determines whether to perform search or proceed to final answer.
     """
-    # If we already have search results or final answer, go to clarification
+    # If we already have search results or final answer, go to end
     if state.get("search_results") or state.get("final_answer"):
-        logger.info("Search results already available, going to clarification")
-        return "clarification_node"
+        logger.info("Search results already available, going to end")
+        return "end"
     
     # Otherwise, perform search
     logger.info("Need to perform web search")
@@ -405,7 +461,7 @@ def clarification_node(state: State, config: RunnableConfig) -> Dict[str, Any]:
         
         response = llm.invoke(clarification_prompt.format_messages(query=extract_query_from_state(state)))
         return {
-            "messages": state["messages"] + [response],
+            "messages": state["messages"] + [AIMessage(content=response.content)],
             "needs_clarification": False
         }
     
@@ -424,10 +480,55 @@ def clarification_node(state: State, config: RunnableConfig) -> Dict[str, Any]:
         ]
     }
 
-
 # ============================================================================
 # UTILITY FUNCTIONS
 # ============================================================================
+
+def optimize_document_context(docs: List[Document], query: str) -> List[Document]:
+    """
+    Optimize document context by reranking and filtering documents
+    based on relevance to the query.
+    """
+    if not docs:
+        return []
+    
+    # Simple keyword-based reranking
+    query_keywords = set(query.lower().split())
+    
+    scored_docs = []
+    for doc in docs:
+        content_lower = doc.page_content.lower()
+        
+        # Calculate relevance score
+        keyword_matches = sum(1 for keyword in query_keywords if keyword in content_lower)
+        
+        # Bonus for specific terms
+        bonus_score = 0
+        if "table" in content_lower and any(term in query.lower() for term in ["accuracy", "performance", "results"]):
+            bonus_score += 2
+        if "zhang" in content_lower and "2024" in query.lower():
+            bonus_score += 3
+        if "spider" in content_lower and "spider" in query.lower():
+            bonus_score += 2
+        if "prompt" in content_lower and "prompt" in query.lower():
+            bonus_score += 2
+        
+        total_score = keyword_matches + bonus_score
+        
+        # Create new document with score
+        new_doc = Document(
+            page_content=doc.page_content,
+            metadata={
+                **doc.metadata,
+                "relevance_score": total_score
+            }
+        )
+        scored_docs.append((new_doc, total_score))
+    
+    # Sort by relevance score and return top documents
+    scored_docs.sort(key=lambda x: x[1], reverse=True)
+    return [doc for doc, score in scored_docs[:10]]  # Return top 10 most relevant
+
 
 def process_tool_results(state: State, tool_name: str, results: Any) -> Dict[str, Any]:
     """

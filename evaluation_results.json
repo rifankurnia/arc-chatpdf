@@ -1,0 +1,230 @@
+{
+  "summary": {
+    "total_questions": 8,
+    "successful_questions": 8,
+    "failed_questions": 0,
+    "success_rate": 1.0,
+    "average_score": 0.5565349234099233,
+    "average_successful_score": 0.5565349234099233,
+    "keyword_accuracy": 0.6060606060606061
+  },
+  "category_performance": {
+    "performance_metrics": 0.9207142857142856,
+    "methodology": 0.6199999999999999,
+    "current_events": 0.48636363636363633,
+    "comparison": 0.27999999999999997,
+    "paper_overview": 0.32499999999999996,
+    "clarification": 0.2794871794871795
+  },
+  "difficulty_performance": {
+    "medium": 0.9207142857142856,
+    "easy": 0.466170163170163,
+    "hard": 0.27999999999999997
+  },
+  "top_performing": [
+    {
+      "question": "Which prompt template gave the highest zero-shot accuracy on Spider in Zhang et al. (2024)?",
+      "score": 0.97,
+      "category": "performance_metrics",
+      "difficulty": "medium"
+    },
+    {
+      "question": "What execution accuracy does davinci-codex reach on Spider with the 'Create Table + Select 3' prompt...",
+      "score": 0.8714285714285713,
+      "category": "performance_metrics",
+      "difficulty": "medium"
+    },
+    {
+      "question": "What datasets were used in the evaluation?",
+      "score": 0.7649999999999999,
+      "category": "methodology",
+      "difficulty": "easy"
+    },
+    {
+      "question": "What is the latest news about OpenAI?",
+      "score": 0.48636363636363633,
+      "category": "current_events",
+      "difficulty": "easy"
+    },
+    {
+      "question": "What other prompt templates were tested in Zhang et al. (2024)?",
+      "score": 0.475,
+      "category": "methodology",
+      "difficulty": "easy"
+    }
+  ],
+  "worst_performing": [
+    {
+      "question": "What is the latest news about OpenAI?",
+      "score": 0.48636363636363633,
+      "category": "current_events",
+      "difficulty": "easy",
+      "notes": "Keyword score: 0.50, Word overlap: 0.45"
+    },
+    {
+      "question": "What other prompt templates were tested in Zhang et al. (2024)?",
+      "score": 0.475,
+      "category": "methodology",
+      "difficulty": "easy",
+      "notes": "Keyword score: 0.50, Word overlap: 0.42"
+    },
+    {
+      "question": "What are the main contributions of the Zhang et al. (2024) paper?",
+      "score": 0.32499999999999996,
+      "category": "paper_overview",
+      "difficulty": "easy",
+      "notes": "Keyword score: 0.25, Word overlap: 0.50"
+    },
+    {
+      "question": "How does the performance of DDL-MD-Chat compare to SimpleDDL-MD-Chat?",
+      "score": 0.27999999999999997,
+      "category": "comparison",
+      "difficulty": "hard",
+      "notes": "Keyword score: 0.40, Word overlap: 0.00"
+    },
+    {
+      "question": "What is the best?",
+      "score": 0.2794871794871795,
+      "category": "clarification",
+      "difficulty": "easy",
+      "notes": "Keyword score: 0.33, Word overlap: 0.15"
+    }
+  ],
+  "detailed_results": [
+    {
+      "question": "Which prompt template gave the highest zero-shot accuracy on Spider in Zhang et al. (2024)?",
+      "expected_answer": "SimpleDDL-MD-Chat achieved the highest zero-shot accuracy of 71.6% on Spider",
+      "actual_answer": "The prompt template that gave the highest zero-shot accuracy on Spider in Zhang et al. (2024) was \"SimpleDDL-MD-Chat\". This template achieved an execution accuracy (EX) of 71.6% when used with the Codellama-34B model, as shown in Table 3 on page 6 of the document.",
+      "score": 0.97,
+      "category": "performance_metrics",
+      "difficulty": "medium",
+      "keywords_found": [
+        "SimpleDDL-MD-Chat",
+        "71.6%",
+        "Spider",
+        "zero-shot"
+      ],
+      "keywords_missing": [],
+      "notes": "Keyword score: 1.00, Word overlap: 0.90"
+    },
+    {
+      "question": "What other prompt templates were tested in Zhang et al. (2024)?",
+      "expected_answer": "The paper tested DDL-HTML-Chat, DDL-HTML-Complete, DDL-MD-Chat, DDL-MD-Complete, DDL-Coding-Chat, DDL-Coding-Complete, SimpleDDL-MD-Chat, and SimpleDDL-MD-Complete",
+      "actual_answer": "In the research paper by Zhang et al. (2024), three prompt templates were tested. These include:\n\n1. DDL-Coding-Complete\n2. SimpleDDL-MD-Chat\n3. SimpleDDL-MD-Complete\n\nThese templates were tested on the Spider dev set, and the \"SimpleDDL-MD-Chat\" template was found to consistently outperform all other prompts when applied to all 5 backbone LLMs (Source: Zhang et al. - 2024 - Benchmarking the Text-to-SQL Capability of Large L.pdf, Page: 6).",
+      "score": 0.475,
+      "category": "methodology",
+      "difficulty": "easy",
+      "keywords_found": [
+        "DDL-MD-Chat",
+        "SimpleDDL-MD-Complete"
+      ],
+      "keywords_missing": [
+        "DDL-HTML-Chat",
+        "DDL-Coding-Chat"
+      ],
+      "notes": "Keyword score: 0.50, Word overlap: 0.42"
+    },
+    {
+      "question": "What is the latest news about OpenAI?",
+      "expected_answer": "OpenAI has made several recent announcements including new models and partnerships",
+      "actual_answer": "OpenAI, the AI research lab, has been making headlines recently for several reasons. According to Reuters, OpenAI has entered into a strategic partnership with Britain to deepen collaboration on AI security research and explore investing in British AI. This suggests a significant expansion of OpenAI's global collaborations.\n\nIn addition, WIRED reports that OpenAI is seeking additional capital from investors as part of a $40 billion funding round. This indicates that the company is looking to significantly increase its resources and capabilities.\n\nOpenAI's CEO, Sam Altman, has also been vocal about the potential misuse of AI technology. As reported by The Independent and TechCrunch, Altman has warned about the risks of AI fraud and the lack of legal confidentiality when using AI systems like ChatGPT as a therapist.\n\nFurthermore, OpenAI has announced its DevDay 2025, as per the company's official news page. This event is likely to showcase the latest developments and future plans of the company.\n\nLastly, TechCrunch reports that Meta has appointed Shengjia Zhao as the chief scientist of its AI superintelligence unit. While this news is not directly about OpenAI, it is relevant to the broader AI research community that OpenAI is a part of.\n\nPlease note that the dates of these developments are not specified in the search results. For the most recent and detailed information, it would be best to visit the respective news sources.",
+      "score": 0.48636363636363633,
+      "category": "current_events",
+      "difficulty": "easy",
+      "keywords_found": [
+        "OpenAI",
+        "recent"
+      ],
+      "keywords_missing": [
+        "announcements",
+        "models"
+      ],
+      "notes": "Keyword score: 0.50, Word overlap: 0.45"
+    },
+    {
+      "question": "How does the performance of DDL-MD-Chat compare to SimpleDDL-MD-Chat?",
+      "expected_answer": "SimpleDDL-MD-Chat performed better than DDL-MD-Chat with higher accuracy scores",
+      "actual_answer": "I'm sorry, but the documents provided do not contain a direct comparison between the performance of \"DDL-MD-Chat\" and \"SimpleDDL-MD-Chat\". The documents mention the performance of \"SimpleDDL-MD-Chat\" in various contexts, but there is no mention of a template named \"DDL-MD-Chat\". Therefore, a comparison between the two cannot be made based on the provided documents.",
+      "score": 0.27999999999999997,
+      "category": "comparison",
+      "difficulty": "hard",
+      "keywords_found": [
+        "SimpleDDL-MD-Chat",
+        "DDL-MD-Chat"
+      ],
+      "keywords_missing": [
+        "better",
+        "higher",
+        "accuracy"
+      ],
+      "notes": "Keyword score: 0.40, Word overlap: 0.00"
+    },
+    {
+      "question": "What execution accuracy does davinci-codex reach on Spider with the 'Create Table + Select 3' prompt?",
+      "expected_answer": "Davinci-codex attains 67% execution accuracy on the Spider dev set with that prompt style",
+      "actual_answer": "The davinci-codex model achieves an execution accuracy of 67% on the Spider dataset with the 'Create Table + Select 3' prompt. This information is found in the document \"Evaluating the Text-to-SQL Capabilities of Large L.pdf\" by Rajkumar et al., 2022, on page 1.",
+      "score": 0.8714285714285713,
+      "category": "performance_metrics",
+      "difficulty": "medium",
+      "keywords_found": [
+        "davinci-codex",
+        "67%",
+        "execution accuracy",
+        "Spider",
+        "Create Table + Select 3"
+      ],
+      "keywords_missing": [],
+      "notes": "Keyword score: 1.00, Word overlap: 0.57"
+    },
+    {
+      "question": "What are the main contributions of the Zhang et al. (2024) paper?",
+      "expected_answer": "The paper contributes a comprehensive benchmark for text-to-SQL capability evaluation",
+      "actual_answer": "I'm sorry, but the documents provided do not contain specific information about the main contributions of the Zhang et al. (2024) paper. The documents mostly contain references to the paper, but they do not provide a summary or detailed information about its content or contributions. Please provide the specific paper or more detailed documents for a comprehensive analysis.",
+      "score": 0.32499999999999996,
+      "category": "paper_overview",
+      "difficulty": "easy",
+      "keywords_found": [
+        "contributions"
+      ],
+      "keywords_missing": [
+        "benchmark",
+        "text-to-SQL",
+        "evaluation"
+      ],
+      "notes": "Keyword score: 0.25, Word overlap: 0.50"
+    },
+    {
+      "question": "What is the best?",
+      "expected_answer": "This question is ambiguous and needs clarification about what context is being referred to",
+      "actual_answer": "Could you please specify in which context or category you are asking about? For example, are you asking about the best movie, book, car, or something else?",
+      "score": 0.2794871794871795,
+      "category": "clarification",
+      "difficulty": "easy",
+      "keywords_found": [
+        "context"
+      ],
+      "keywords_missing": [
+        "ambiguous",
+        "clarification"
+      ],
+      "notes": "Keyword score: 0.33, Word overlap: 0.15"
+    },
+    {
+      "question": "What datasets were used in the evaluation?",
+      "expected_answer": "The Spider benchmark dataset was used for evaluation in the study",
+      "actual_answer": "The following datasets were used in the evaluation:\n\n1. BIRD: This dataset involves 12,751 Text-to-SQL pairs and 95 databases with a size of 33.4 GB. It incorporates the advantages of previous datasets like Spider and KaggleDBQA. It is the first to be curated for evaluating SQL execution efficiency in large-scale databases [Source: Zhang et al. - 2024, Page: 3].\n\n2. BigTable-0.2k: This is a novel dataset constructed by the authors, which is an extension and augmentation of the BIRD dataset [Source: Zhang et al. - 2024, Page: 4].\n\n3. WikiSQL: This is considered the first large-scale dataset enabling the training and evaluation of learning-based Text-to-SQL methods. It is also known as a cross-domain dataset [Source: Zhang et al. - 2024, Page: 2].\n\n4. KaggleDBQA: This is a cross-domain dataset extracted from Kaggle and features real-world databases taken from the Web. It also includes documentation and metadata for its databases [Source: Katsogiannis-Meimarakis and Koutrika - 2023, Page: 4].\n\n5. Spider: This is a cross-domain dataset with complex SQLs [Source: Zhang et al. - 2024, Page: 3].\n\n6. GeoQuery: This dataset was used in the evaluation of the finetuned T5 model [Source: Rajkumar et al. - 2022, Page: 3].\n\n7. Scholar: This dataset was also used in the evaluation of the finetuned T5 model [Source: Rajkumar et al. - 2022, Page: 3].\n\n8. IMDb: This is a domain-specific text-to-SQL dataset focusing on movies and television series [Source: Katsogiannis-Meimarakis and Koutrika - 2023, Page: 3].\n\nPlease note that the last two datasets (GeoQuery and Scholar) were mentioned in a different document and might not be directly related to the main research paper by Zhang et al.",
+      "score": 0.7649999999999999,
+      "category": "methodology",
+      "difficulty": "easy",
+      "keywords_found": [
+        "Spider",
+        "dataset",
+        "evaluation"
+      ],
+      "keywords_missing": [
+        "benchmark"
+      ],
+      "notes": "Keyword score: 0.75, Word overlap: 0.80"
+    }
+  ]
+}

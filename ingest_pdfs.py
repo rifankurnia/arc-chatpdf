@@ -10,6 +10,17 @@ from langchain.schema import Document
 import logging
 from tqdm import tqdm
 
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
+
+# Configure LangSmith tracing
+import os
+os.environ["LANGSMITH_TRACING"] = os.getenv("LANGSMITH_TRACING", "false")
+os.environ["LANGSMITH_ENDPOINT"] = os.getenv("LANGSMITH_ENDPOINT", "https://api.smith.langchain.com")
+os.environ["LANGSMITH_API_KEY"] = os.getenv("LANGSMITH_API_KEY", "")
+os.environ["LANGSMITH_PROJECT"] = os.getenv("LANGSMITH_PROJECT", "arc-chatpdf")
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -33,7 +44,7 @@ def process_documents(documents: List[Document]) -> List[Document]:
         chunk_size=1000,
         chunk_overlap=200,
         length_function=len,
-        separators=["\n\n", "\n", " ", ""]
+        separators=["\n\n## ","\n\n### ","\n\n", "\n", " ", ""]
     )
     
     chunks = text_splitter.split_documents(documents)
@@ -134,7 +145,7 @@ def main():
     parser.add_argument(
         "--pdf-dir",
         type=str,
-        default="/Users/rifan/Documents/GitHub/boilerplate-langgraph/data",
+        default="./data",
         help="Directory containing PDF files"
     )
     parser.add_argument(

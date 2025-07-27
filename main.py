@@ -17,7 +17,18 @@ from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain_core.messages import BaseMessage
 import os
-from typing import Dict, Any
+from typing import Dict, Any, List
+
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
+
+# Configure LangSmith tracing
+import os
+os.environ["LANGSMITH_TRACING"] = os.getenv("LANGSMITH_TRACING", "false")
+os.environ["LANGSMITH_ENDPOINT"] = os.getenv("LANGSMITH_ENDPOINT", "https://api.smith.langchain.com")
+os.environ["LANGSMITH_API_KEY"] = os.getenv("LANGSMITH_API_KEY", "")
+os.environ["LANGSMITH_PROJECT"] = os.getenv("LANGSMITH_PROJECT", "arc-chatpdf")
 
 
 # Custom tool wrappers to process results
@@ -28,6 +39,21 @@ def tavily_search_wrapper(query: str) -> Dict[str, Any]:
     return results
 
 
+def remove_duplicate_docs(docs: List) -> List:
+    """Remove duplicate documents based on content similarity"""
+    seen_contents = set()
+    unique_docs = []
+    
+    for doc in docs:
+        # Create a content hash (first 100 chars)
+        content_hash = doc.page_content[:100].strip()
+        if content_hash not in seen_contents:
+            seen_contents.add(content_hash)
+            unique_docs.append(doc)
+    
+    return unique_docs
+
+
 def chroma_retriever_wrapper(query: str) -> Dict[str, Any]:
     """Wrapper for Chroma retriever that returns documents"""
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
@@ -36,9 +62,18 @@ def chroma_retriever_wrapper(query: str) -> Dict[str, Any]:
         embedding_function=embeddings,
         persist_directory="./chroma_langchain_db",
     )
-    retriever = vector_store.as_retriever(search_kwargs={"k": 5})
+    
+    # Simple retrieval without query expansion
+    retriever = vector_store.as_retriever(
+        search_kwargs={
+            "k": 15  # Increased from 5 to 15
+        }
+    )
     docs = retriever.invoke(query)
-    return docs
+    
+    # Remove duplicates and sort by relevance
+    unique_docs = remove_duplicate_docs(docs)
+    return unique_docs[:20]  # Return top 20 unique documents
 
 
 # Custom nodes that integrate with tools
@@ -94,7 +129,7 @@ graph_builder.add_conditional_edges(
     chroma_conditional,
     {
         "chroma_retriever": "chroma_retriever",
-        "clarification_node": "clarification_node"
+        "end": END
     }
 )
 graph_builder.add_edge("chroma_retriever", "document_rag")
@@ -105,12 +140,12 @@ graph_builder.add_conditional_edges(
     websearch_conditional,
     {
         "tavily_search": "tavily_search",
-        "clarification_node": "clarification_node"
+        "end": END
     }
 )
 graph_builder.add_edge("tavily_search", "websearch_rag")
 
-# All paths lead to clarification/final answer
+# Clarification node only for ambiguous queries
 graph_builder.add_edge("clarification_node", END)
 
 # Compile the graph
@@ -142,10 +177,19 @@ async def run_query(query: str, message_history: list = None) -> str:
     # Run the graph
     result = await graph.ainvoke(initial_state)
     
-    # Extract the final answer
-    if result["messages"]:
-        return result["messages"][-1].content
-    return "No response generated."
+    # Extract the final answer from messages or final_answer field
+    if result.get("final_answer"):
+        # Add the final answer to message history for future context
+        from langchain_core.messages import AIMessage
+        message_history.append(AIMessage(content=result["final_answer"]))
+        return result["final_answer"]
+    elif result.get("messages") and len(result["messages"]) > len(message_history):
+        # Return the last AI message and update message history
+        last_message = result["messages"][-1]
+        message_history.append(last_message)
+        return last_message.content
+    else:
+        return "No response generated."
 
 
 # Synchronous wrapper for convenience

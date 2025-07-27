@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
@@ -9,13 +9,9 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv (fast Python installer)
-RUN pip install --no-cache-dir uv
-
-# Copy pyproject.toml and uv.lock for dependency installation
-COPY pyproject.toml .
-COPY uv.lock .
-RUN uv pip install -r pyproject.toml --system
+# Copy requirements and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
