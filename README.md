@@ -276,6 +276,7 @@ curl http://localhost:8000/health
 - **Memory constraints**: Large document sets may require significant RAM
 - **API dependencies**: Relies on external services for core functionality
 - **Cold start latency**: Initial document ingestion can be slow
+- Wrong routing execution when switching between document RAG and web search within a single thread
 
 ### Design Trade-offs
 
@@ -292,6 +293,8 @@ curl http://localhost:8000/health
 - **Multi-modal support**: Extend to images, tables, and other content types
 - **Authentication**: Add user management and access controls
 - **Performance monitoring**: Real-time metrics and alerting
+- Routing improvement when switching between document RAG and web search within a single thread
+- Use better embedding models with better chunking strategy 
 
 ### Research Directions
 
